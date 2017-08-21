@@ -1,84 +1,115 @@
 /**
  * simpleNav
- * @version 1.0.0-beta.1
+ * @version 1.1.0
  */
 ;(function($) {
 
-  $.fn.simpleNav = function(options) {
+    $.fn.simpleNav = function(options) {
 
-    var settings = $.extend(true, {
-        timing : 300,
-        topMargin : 0,
-        menu   : {
-            list    : 'ul',
-            item    : 'li',
-            trigger : 'a'
-        },
-        classes : {
-            opened : 'opened',
-            active : 'active',
-            used   : 'used'
-        },
-        attrs : {
-            opened : {
-                key    : 'opened',
-                true   : 'true',
-                false  : 'false'
+        var opts = $.extend(true, {
+                timing : 300,
+                topMargin : 0,
+                menu   : {
+                    list        : 'ul',
+                    item        : 'li',
+                    trigger     : 'a',
+                    triggerHTML : '<div class="submenu-trigger"></div>'
+                },
+                classes : {
+                    opened  : 'opened',
+                    opening : 'opening',
+                    active  : 'active',
+                    used    : 'used',
+                    has     : 'has-submenu'
+                },
+                attrs : {
+                    opened : {
+                        key    : 'opened',
+                        true   : 'true',
+                        false  : 'false'
+                    }
+                }
+            }, options);
+
+        var $menu = this;
+        var $items = $menu.find(opts.menu.item);
+
+        $.each($items, function (index, item) {
+
+            var $item = $(item);
+            var $link = $item.find('> a');
+
+            if ($item.find('> ul').length > 0) {
+
+                $item
+                    .addClass(opts.classes.has)
+                    .find('> a')
+                    .after($(opts.menu.triggerHTML));
+
+                $link.attr({
+                    'aria-expanded' : $item.hasClass(opts.classes.opened),
+                    'aria-haspopup' : true
+                });
             }
-        }
-    }, options);
-
-    var $this = this;
-    var $trigers = $this.find(settings.menu.list).parent(settings.menu.item).find('> ' + settings.menu.trigger);
-
-    $trigers.on('click', function(event) {
-
-        event.preventDefault();
-
-        var $list = $(this).parent(settings.menu.item).find('> ' + settings.menu.list);
-
-        $list.css({
-            display:'block',
         });
 
-        if ($list.parent(settings.menu.item).hasClass(settings.classes.opened)) {
 
-            $list.stop().animate({
-                marginTop : -($list.outerHeight(true)-settings.topMargin)
-            }, settings.timing, function() {
-                $list
-                    .attr(settings.attrs.opened.key, settings.attrs.opened.false)
-                    .addClass(settings.classes.used)
-                    .parent(settings.menu.item).removeClass(settings.classes.opened);
+        $items.find('> ' + opts.menu.trigger).on('click', function(event) {
+
+            event.preventDefault();
+
+            var $link = $(this).closest(opts.menu.item).find('> ' + opts.menu.trigger);
+            var $list = $(this).closest(opts.menu.item).find('> ' + opts.menu.list);
+
+            $list.css({
+                display : 'block'
             });
 
-        } else {
+            if ($list.parent(opts.menu.item).hasClass(opts.classes.opened)) {
 
-            if (!$list.hasClass(settings.classes.used)) {
+                $list.stop().animate({
+                    marginTop : -($list.outerHeight(true)-opts.topMargin)
+                }, opts.timing, function() {
+
+                    $link.attr('aria-expanded', false);
+
+                    $list
+                        //.attr(opts.attrs.opened.key, opts.attrs.opened.false)
+                        .addClass(opts.classes.used)
+                        .parent(opts.menu.item).removeClass(opts.classes.opened);
+
+                });
+
+            } else {
+
+                if (!$list.hasClass(opts.classes.used)) {
+                    $list
+                        .css({
+                            marginTop : -($list.outerHeight(true)-opts.topMargin)
+                        })
+                        .addClass(opts.classes.used);
+                }
+
                 $list
-                    .css({
-                        marginTop : -($list.outerHeight(true)-settings.topMargin)
-                    })
-                    .addClass(settings.classes.used);
+                    .parent(opts.menu.item).addClass(opts.classes.opening)
+                    .end()
+                    .stop().animate({
+                        marginTop : (0 + opts.topMargin)
+                    }, opts.timing, function() {
+
+                        $link.attr('aria-expanded', true);
+
+                        $list
+                            //.attr(opts.attrs.opened.key, opts.attrs.opened.true)
+                            .parent(opts.menu.item).removeClass(opts.classes.opening)
+                                .end()
+                            .addClass(opts.classes.used)
+                            .parent(opts.menu.item).addClass(opts.classes.opened);
+                    });
             }
 
-            $list
-                .parent(settings.menu.item).addClass('opening')
-                .end()
-                .stop().animate({
-                    marginTop : (0 + settings.topMargin)
-                }, settings.timing, function() {
-                    $list
-                        .attr(settings.attrs.opened.key, settings.attrs.opened.true)
-                        .parent(settings.menu.item).removeClass('opening')
-                            .end()
-                        .addClass(settings.classes.used)
-                        .parent(settings.menu.item).addClass(settings.classes.opened);
-                });
-        }
+        });
 
-    });
-
-  };
+    };
 
 })(jQuery);
